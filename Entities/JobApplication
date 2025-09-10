@@ -1,0 +1,114 @@
+{
+  "name": "JobApplication",
+  "type": "object",
+  "properties": {
+    "job_id": {
+      "type": "string",
+      "description": "ID of the job being applied for"
+    },
+    "full_name": {
+      "type": "string",
+      "description": "Applicant's full name"
+    },
+    "email": {
+      "type": "string",
+      "description": "Applicant's email"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Phone number"
+    },
+    "current_location": {
+      "type": "string",
+      "description": "Current location"
+    },
+    "linkedin_url": {
+      "type": "string",
+      "description": "LinkedIn profile URL"
+    },
+    "portfolio_url": {
+      "type": "string",
+      "description": "Portfolio/website URL"
+    },
+    "resume_url": {
+      "type": "string",
+      "description": "URL to uploaded resume"
+    },
+    "education": {
+      "type": "string",
+      "description": "Educational background"
+    },
+    "experience_years": {
+      "type": "number",
+      "description": "Years of relevant experience"
+    },
+    "current_role": {
+      "type": "string",
+      "description": "Current job title/role"
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of relevant skills"
+    },
+    "cover_letter": {
+      "type": "string",
+      "description": "Cover letter or motivation"
+    },
+    "expected_salary": {
+      "type": "string",
+      "description": "Expected salary range"
+    },
+    "availability": {
+      "type": "string",
+      "description": "Notice period or availability"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "submitted",
+        "reviewed",
+        "interviewed",
+        "accepted",
+        "rejected"
+      ],
+      "default": "submitted"
+    }
+  },
+  "required": [
+    "job_id",
+    "full_name",
+    "email",
+    "phone",
+    "education",
+    "experience_years"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "write": {
+      "$or": [
+        {
+          "email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
