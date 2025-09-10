@@ -1,0 +1,151 @@
+
+import React, { useState, useEffect, useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { MessageSquare, X, Send, Bot, User as UserIcon } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { InvokeLLM } from '@/integrations/Core';
+import { Dashboard } from '@/entities/Dashboard';
+import { trackActivity } from '@/components/tracking';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
+
+export default function Chatbot() {
+    const [isOpen, setIsOpen] = useState(false);
+    const [messages, setMessages] = useState([
+        { from: 'bot', text: "Hello! How can I help you find the perfect dashboard today? You can ask me things like 'I need a dashboard for marketing'." }
+    ]);
+    const [userInput, setUserInput] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [dashboardContext, setDashboardContext] = useState('');
+    const messagesEndRef = useRef(null);
+
+    useEffect(() => {
+        const fetchDashboards = async () => {
+            const dashboards = await Dashboard.filter({ status: 'active' });
+            const context = dashboards.map(d => `- ${d.title}: ${d.description} (Category: ${d.category}, Price: $${d.price}, ID: ${d.id})`).join('\n');
+            setDashboardContext(context);
+        };
+        fetchDashboards();
+    }, []);
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
+    useEffect(scrollToBottom, [messages]);
+
+    const handleSendMessage = async (e) => {
+        e.preventDefault();
+        if (!userInput.trim() || isLoading) return;
+
+        const newMessages = [...messages, { from: 'user', text: userInput }];
+        setMessages(newMessages);
+        setUserInput('');
+        setIsLoading(true);
+        
+        trackActivity('chatbot_interaction', { query: userInput });
+
+        try {
+            const prompt = `You are a PowerBI dashboard sales assistant. A user is asking for a dashboard. Their query is: "${userInput}".
+            Based on the following list of available dashboards, recommend one or more that fit their needs. 
+            For each recommendation, provide the title, a brief explanation of why it fits, and its ID.
+            If no dashboards fit, politely say so and suggest they check out our custom services.
+            Available Dashboards:
+            ${dashboardContext}
+            
+            Respond ONLY with a JSON object with a key "recommendations" which is an array of objects. Each object should have "title", "reason", and "id" keys.
+            If there are no recommendations, the array should be empty.
+            Example response: { "recommendations": [{ "title": "Sales Performance Analytics", "reason": "This is great for tracking sales.", "id": "123" }] }`;
+            
+            const result = await InvokeLLM({
+                prompt,
+                response_json_schema: {
+                    type: 'object',
+                    properties: {
+                        recommendations: {
+                            type: 'array',
+                            items: {
+                                type: 'object',
+                                properties: {
+                                    title: { type: 'string' },
+                                    reason: { type: 'string' },
+                                    id: { type: 'string' }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            if (result && result.recommendations && result.recommendations.length > 0) {
+                const botResponses = result.recommendations.map(rec => ({
+                    from: 'bot',
+                    text: `I recommend the **${rec.title}**. ${rec.reason}`,
+                    link: createPageUrl(`DashboardDetail?id=${rec.id}`)
+                }));
+                setMessages(prev => [...prev, ...botResponses]);
+            } else {
+                setMessages(prev => [...prev, { from: 'bot', text: "I couldn't find a perfect match. You might be interested in our custom dashboard services!" }]);
+            }
+
+        } catch (error) {
+            console.error("Error with chatbot:", error);
+            setMessages(prev => [...prev, { from: 'bot', text: "I'm having a little trouble right now. Please try again later." }]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <>
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 50 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 50 }}
+                        className="fixed bottom-24 right-8 z-50"
+                    >
+                        <Card className="w-96 h-[32rem] shadow-2xl flex flex-col bg-white">
+                            <CardHeader className="flex flex-row items-center justify-between">
+                                <CardTitle className="flex items-center gap-2">
+                                    <Bot /> Dashboard Assistant
+                                </CardTitle>
+                                <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}><X className="w-4 h-4" /></Button>
+                            </CardHeader>
+                            <CardContent className="flex-grow overflow-y-auto p-4 space-y-4">
+                                {messages.map((msg, index) => (
+                                    <div key={index} className={`flex items-start gap-2 ${msg.from === 'user' ? 'justify-end' : ''}`}>
+                                        {msg.from === 'bot' && <div className="bg-slate-200 p-2 rounded-full"><Bot className="w-5 h-5"/></div>}
+                                        <div className={`p-3 rounded-lg max-w-xs ${msg.from === 'bot' ? 'bg-slate-100' : 'bg-blue-500 text-white'}`}>
+                                            <p className="text-sm">{msg.text}</p>
+                                            {msg.link && <Link to={msg.link} className="text-blue-500 underline text-sm mt-1 block">View Dashboard</Link>}
+                                        </div>
+                                        {msg.from === 'user' && <div className="bg-blue-500 p-2 rounded-full"><UserIcon className="w-5 h-5 text-white"/></div>}
+                                    </div>
+                                ))}
+                                {isLoading && <div className="flex justify-start"><div className="p-3 rounded-lg bg-slate-100">Thinking...</div></div>}
+                                <div ref={messagesEndRef} />
+                            </CardContent>
+                            <CardFooter>
+                                <form onSubmit={handleSendMessage} className="flex w-full gap-2">
+                                    <Input value={userInput} onChange={(e) => setUserInput(e.target.value)} placeholder="Ask me something..." disabled={isLoading} />
+                                    <Button type="submit" disabled={isLoading}><Send className="w-4 h-4"/></Button>
+                                </form>
+                            </CardFooter>
+                        </Card>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+            <Button
+                size="icon"
+                className="fixed bottom-8 right-8 z-50 w-14 h-14 rounded-full shadow-2xl bg-gradient-to-r from-blue-600 to-indigo-700"
+                onClick={() => setIsOpen(prev => !prev)}
+            >
+                {isOpen ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
+            </Button>
+        </>
+    );
+}
