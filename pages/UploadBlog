@@ -1,0 +1,264 @@
+import React, { useState, useEffect } from 'react';
+import { BlogPost } from '@/entities/BlogPost';
+import { User } from '@/entities/User';
+import { UploadFile } from '@/integrations/Core';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Upload, FileText, Image, Plus, X, ShieldCheck } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
+
+export default function UploadBlog() {
+    const [formData, setFormData] = useState({
+        title: '',
+        content: '',
+        tags: ['']
+    });
+    const [previewImage, setPreviewImage] = useState(null);
+    const [uploading, setUploading] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const checkLogin = async () => {
+            try {
+                await User.me();
+                setIsLoggedIn(true);
+            } catch (e) {
+                setIsLoggedIn(false);
+            }
+        };
+        checkLogin();
+    }, []);
+
+    const handleInputChange = (field, value) => {
+        setFormData(prev => ({
+            ...prev,
+            [field]: value
+        }));
+    };
+
+    const handleTagChange = (index, value) => {
+        setFormData(prev => ({
+            ...prev,
+            tags: prev.tags.map((tag, i) => i === index ? value : tag)
+        }));
+    };
+
+    const addTag = () => {
+        setFormData(prev => ({
+            ...prev,
+            tags: [...prev.tags, '']
+        }));
+    };
+
+    const removeTag = (index) => {
+        setFormData(prev => ({
+            ...prev,
+            tags: prev.tags.filter((_, i) => i !== index)
+        }));
+    };
+
+    const generateSlug = (title) => {
+        return title
+            .toLowerCase()
+            .replace(/[^a-z0-9 -]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .trim('-');
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setUploading(true);
+
+        try {
+            const user = await User.me();
+            let preview_image = '';
+            
+            if (previewImage) {
+                const uploadResult = await UploadFile({ file: previewImage });
+                preview_image = uploadResult.file_url;
+            }
+
+            const blogData = {
+                title: formData.title,
+                slug: generateSlug(formData.title),
+                content: formData.content,
+                author_name: user.full_name,
+                published_date: new Date().toISOString().split('T')[0],
+                preview_image,
+                tags: formData.tags.filter(tag => tag.trim() !== '')
+            };
+
+            await BlogPost.create(blogData);
+            navigate(createPageUrl('Blog'));
+        } catch (error) {
+            console.error('Error creating blog post:', error);
+        }
+        setUploading(false);
+    };
+
+    if (!isLoggedIn) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-8 flex items-center justify-center">
+                <Card className="max-w-md w-full text-center p-6 border-0 shadow-xl bg-white">
+                    <CardHeader>
+                        <ShieldCheck className="w-16 h-16 text-blue-500 mx-auto mb-4" />
+                        <CardTitle className="text-2xl">Become a Writer</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-slate-600 mb-6">Please login to start writing and sharing your insights.</p>
+                        <Button onClick={() => User.loginWithRedirect(window.location.href)} className="w-full bg-gradient-to-r from-blue-600 to-indigo-700">
+                            Login / Sign Up
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-8">
+            <div className="max-w-4xl mx-auto">
+                <div className="mb-8">
+                    <div className="flex items-center gap-3 mb-4">
+                        <FileText className="w-8 h-8 text-blue-600" />
+                        <h1 className="text-3xl font-bold text-slate-900">Write a Blog Post</h1>
+                    </div>
+                    <p className="text-slate-600">Share your knowledge and insights with the Power BI community</p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+                        <CardHeader>
+                            <CardTitle>Blog Post Details</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">
+                                    Post Title *
+                                </label>
+                                <Input
+                                    value={formData.title}
+                                    onChange={(e) => handleInputChange('title', e.target.value)}
+                                    placeholder="e.g., 10 Advanced DAX Tips for Power BI"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">
+                                    Content *
+                                </label>
+                                <Textarea
+                                    value={formData.content}
+                                    onChange={(e) => handleInputChange('content', e.target.value)}
+                                    placeholder="Write your blog post content here. You can use Markdown formatting..."
+                                    rows={12}
+                                    required
+                                />
+                                <p className="text-xs text-slate-500 mt-1">
+                                    Tip: You can use Markdown formatting (e.g., **bold**, *italic*, # headers)
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+                        <CardHeader>
+                            <CardTitle className="flex items-center justify-between">
+                                Tags
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={addTag}
+                                    className="gap-2"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Add Tag
+                                </Button>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            {formData.tags.map((tag, index) => (
+                                <div key={index} className="flex gap-2">
+                                    <Input
+                                        value={tag}
+                                        onChange={(e) => handleTagChange(index, e.target.value)}
+                                        placeholder="e.g., Power BI, DAX, Data Modeling"
+                                        className="flex-1"
+                                    />
+                                    {formData.tags.length > 1 && (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            onClick={() => removeTag(index)}
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </Button>
+                                    )}
+                                </div>
+                            ))}
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+                        <CardHeader>
+                            <CardTitle>Featured Image</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center">
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => setPreviewImage(e.target.files[0])}
+                                    className="hidden"
+                                    id="preview-upload"
+                                />
+                                <label htmlFor="preview-upload" className="cursor-pointer">
+                                    {previewImage ? (
+                                        <div className="flex items-center justify-center gap-2 text-green-600">
+                                            <Image className="w-5 h-5" />
+                                            <span>{previewImage.name}</span>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            <Image className="w-8 h-8 text-slate-400 mx-auto" />
+                                            <p className="text-slate-600">Click to upload a featured image</p>
+                                        </div>
+                                    )}
+                                </label>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <div className="flex justify-end">
+                        <Button
+                            type="submit"
+                            disabled={uploading}
+                            className="bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 px-8 py-3 text-lg"
+                        >
+                            {uploading ? (
+                                <>
+                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                                    Publishing...
+                                </>
+                            ) : (
+                                <>
+                                    <Upload className="w-5 h-5 mr-2" />
+                                    Publish Post
+                                </>
+                            )}
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
