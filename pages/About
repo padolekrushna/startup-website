@@ -1,0 +1,57 @@
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Building, Users, Lightbulb, TrendingUp } from 'lucide-react';
+
+export default function AboutPage() {
+    const teamMembers = [
+        { name: "Ajit Padole", role: "Founder & CEO", image: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=120&h=120&fit=crop&q=80" },
+        { name: "Mayuri Padole", role: "Head of Product", image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=120&h=120&fit=crop&q=80" },
+        { name: "Krushna Padole", role: "Lead Data Scientist", image: "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=120&h=120&fit=crop&q=80" },
+    ];
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+            <div className="text-center pt-24 pb-16 bg-white">
+                <h1 className="text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">About Power BI Junction</h1>
+                <p className="text-xl text-slate-600 max-w-3xl mx-auto">
+                    Empowering businesses with actionable insights through a world-class Power BI ecosystem.
+                </p>
+            </div>
+            
+            <div className="max-w-7xl mx-auto px-8 py-16">
+                <div className="grid md:grid-cols-3 gap-8 mb-20 text-center">
+                    <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm p-8 transform hover:-translate-y-2 transition-transform duration-300">
+                        <Building className="w-16 h-16 mx-auto text-blue-600 mb-4" />
+                        <h3 className="text-2xl font-bold mb-3">Our Mission</h3>
+                        <p className="text-slate-600">To democratize data analytics by providing accessible, high-quality dashboard templates and courses for businesses of all sizes.</p>
+                    </Card>
+                    <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm p-8 transform hover:-translate-y-2 transition-transform duration-300">
+                        <Lightbulb className="w-16 h-16 mx-auto text-purple-600 mb-4" />
+                        <h3 className="text-2xl font-bold mb-3">Our Vision</h3>
+                        <p className="text-slate-600">To be the leading marketplace and learning hub for Power BI solutions, fostering a vibrant community of data experts and business leaders.</p>
+                    </Card>
+                    <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm p-8 transform hover:-translate-y-2 transition-transform duration-300">
+                        <TrendingUp className="w-16 h-16 mx-auto text-green-600 mb-4" />
+                        <h3 className="text-2xl font-bold mb-3">Our Values</h3>
+                        <p className="text-slate-600">We champion quality, community, and innovation, striving to deliver excellence in every product and service we offer.</p>
+                    </Card>
+                </div>
+
+                <Card className="border-0 shadow-2xl bg-white/90 backdrop-blur-sm">
+                    <CardHeader className="text-center pt-10">
+                        <CardTitle className="text-4xl font-bold">Meet the Leadership Team</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid md:grid-cols-3 gap-8 p-10">
+                        {teamMembers.map(member => (
+                            <div key={member.name} className="text-center p-6 rounded-lg hover:bg-slate-50 transition-colors">
+                                <img src={member.image} alt={member.name} className="w-32 h-32 rounded-full mx-auto mb-4 shadow-lg" />
+                                <h4 className="font-bold text-xl">{member.name}</h4>
+                                <p className="text-blue-700 font-medium text-md">{member.role}</p>
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+    );
+}
