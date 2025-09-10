@@ -1,0 +1,67 @@
+import React, { useState, useEffect } from 'react';
+import { BlogPost } from '@/entities/BlogPost';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
+import { ArrowLeft, User, Calendar } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import { format } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+
+export default function BlogPostDetail() {
+    const [post, setPost] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const slug = urlParams.get('slug');
+
+    useEffect(() => {
+        const fetchPost = async () => {
+            if (slug) {
+                const posts = await BlogPost.filter({ slug });
+                if (posts.length > 0) {
+                    setPost(posts[0]);
+                }
+            }
+            setLoading(false);
+        };
+        fetchPost();
+    }, [slug]);
+
+    if (loading) {
+        return <div className="min-h-screen flex items-center justify-center bg-slate-50">Loading post...</div>;
+    }
+    if (!post) {
+        return <div className="min-h-screen flex items-center justify-center bg-slate-50">Post not found.</div>;
+    }
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-8">
+            <div className="max-w-4xl mx-auto">
+                <Link to={createPageUrl("Blog")} className="mb-8 inline-block">
+                    <Button variant="outline" className="gap-2">
+                        <ArrowLeft className="w-4 h-4" />
+                        Back to Blog
+                    </Button>
+                </Link>
+
+                <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-xl overflow-hidden">
+                    <img src={post.preview_image} alt={post.title} className="w-full h-96 object-cover" />
+                    <div className="p-8 md:p-12">
+                        <div className="flex flex-wrap gap-2 mb-4">
+                            {post.tags?.map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)}
+                        </div>
+                        <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6">{post.title}</h1>
+                        <div className="flex items-center gap-6 text-slate-500 mb-8">
+                            <span className="flex items-center gap-2"><User className="w-4 h-4"/>{post.author_name}</span>
+                            <span className="flex items-center gap-2"><Calendar className="w-4 h-4"/>Published on {format(new Date(post.published_date), 'MMMM d, yyyy')}</span>
+                        </div>
+                        <div className="prose prose-lg max-w-none prose-h1:text-slate-800 prose-h2:text-slate-800 prose-a:text-blue-600 hover:prose-a:text-blue-800">
+                            <ReactMarkdown>{post.content}</ReactMarkdown>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
