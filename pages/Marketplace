@@ -1,0 +1,266 @@
+import React, { useState, useEffect, useCallback } from "react";
+import { Dashboard } from "@/entities/Dashboard";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, Star, Download, TrendingUp, Filter, BarChart3, Zap, WifiOff } from "lucide-react";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+
+export default function Marketplace() {
+    const [dashboards, setDashboards] = useState([]);
+    const [filteredDashboards, setFilteredDashboards] = useState([]);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [selectedCategory, setSelectedCategory] = useState("all");
+    const [sortBy, setSortBy] = useState("newest");
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        loadDashboards();
+    }, []);
+
+    const filterAndSortDashboards = useCallback(() => {
+        let filtered = dashboards.filter(dashboard => {
+            const matchesSearch = dashboard.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                dashboard.description.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesCategory = selectedCategory === "all" || dashboard.category === selectedCategory;
+            return matchesSearch && matchesCategory;
+        });
+
+        switch (sortBy) {
+            case "newest":
+                filtered.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+                break;
+            case "popular":
+                filtered.sort((a, b) => (b.sales_count || 0) - (a.sales_count || 0));
+                break;
+            case "price_low":
+                filtered.sort((a, b) => a.price - b.price);
+                break;
+            case "price_high":
+                filtered.sort((a, b) => b.price - a.price);
+                break;
+            default:
+                break;
+        }
+
+        setFilteredDashboards(filtered);
+    }, [dashboards, searchQuery, selectedCategory, sortBy]);
+
+    useEffect(() => {
+        filterAndSortDashboards();
+    }, [filterAndSortDashboards]);
+
+    const loadDashboards = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await Dashboard.filter({ status: "active" }, "-created_date");
+            setDashboards(data);
+        } catch (error) {
+            console.error("Error loading dashboards:", error);
+            setError("Could not load dashboards. Please check your connection and try again.");
+        }
+        setLoading(false);
+    };
+
+    const categoryColors = {
+        sales: "bg-blue-100 text-blue-800",
+        marketing: "bg-purple-100 text-purple-800",
+        finance: "bg-green-100 text-green-800",
+        operations: "bg-orange-100 text-orange-800",
+        hr: "bg-pink-100 text-pink-800",
+        executive: "bg-indigo-100 text-indigo-800",
+        retail: "bg-yellow-100 text-yellow-800",
+        manufacturing: "bg-red-100 text-red-800",
+        healthcare: "bg-teal-100 text-teal-800",
+        education: "bg-cyan-100 text-cyan-800",
+        other: "bg-gray-100 text-gray-800"
+    };
+
+    if (loading) {
+        return (
+            <div className="p-4 lg:p-8">
+                <div className="max-w-7xl mx-auto">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+                        {[...Array(6)].map((_, i) => (
+                            <Card key={i} className="animate-pulse">
+                                <div className="aspect-video bg-gray-200 rounded-t-lg"></div>
+                                <CardHeader>
+                                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                                    <div className="h-3 bg-gray-200 rounded w-1/2 mt-2"></div>
+                                </CardHeader>
+                            </Card>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center h-full text-center p-4 lg:p-8 min-h-[60vh]">
+                <WifiOff className="w-16 lg:w-24 h-16 lg:h-24 text-red-500 mb-4 lg:mb-6" />
+                <h1 className="text-2xl lg:text-3xl font-bold mb-2">Connection Error</h1>
+                <p className="text-slate-600 text-base lg:text-lg mb-4 lg:mb-6 px-4">{error}</p>
+                <Button onClick={loadDashboards}>Try Again</Button>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+            {/* Hero Section */}
+            <div className="bg-gradient-to-r from-blue-600 via-indigo-700 to-purple-800 text-white">
+                <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8 lg:py-16">
+                    <div className="text-center">
+                        <h1 className="text-3xl md:text-4xl lg:text-6xl font-bold mb-4 lg:mb-6 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
+                            Premium Power BI Dashboards
+                        </h1>
+                        <p className="text-lg lg:text-xl text-blue-100 mb-6 lg:mb-8 max-w-3xl mx-auto px-4">
+                            Discover professionally crafted dashboards to accelerate your analytics journey. 
+                            Ready-to-use templates from industry experts.
+                        </p>
+                        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 lg:gap-8 text-sm">
+                            <div className="flex items-center gap-2">
+                                <Zap className="w-5 h-5" />
+                                <span>Instant Access</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Download className="w-5 h-5" />
+                                <span>Free & Paid Options</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Star className="w-5 h-5" />
+                                <span>Expert Crafted</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Filters */}
+            <div className="bg-white/80 backdrop-blur-sm border-b border-slate-200/50 sticky top-0 lg:top-20 z-10">
+                <div className="max-w-7xl mx-auto px-4 lg:px-8 py-4 lg:py-6">
+                    <div className="flex flex-col gap-4">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                            <Input
+                                placeholder="Search dashboards..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-10 h-12 border-slate-200 bg-white/50 backdrop-blur-sm"
+                            />
+                        </div>
+                        <div className="flex gap-2 flex-wrap">
+                            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                                <SelectTrigger className="w-full sm:w-40 h-12 bg-white/50 backdrop-blur-sm">
+                                    <Filter className="w-4 h-4 mr-2" />
+                                    <SelectValue placeholder="Category" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Categories</SelectItem>
+                                    <SelectItem value="sales">Sales</SelectItem>
+                                    <SelectItem value="marketing">Marketing</SelectItem>
+                                    <SelectItem value="finance">Finance</SelectItem>
+                                    <SelectItem value="operations">Operations</SelectItem>
+                                    <SelectItem value="hr">HR</SelectItem>
+                                    <SelectItem value="executive">Executive</SelectItem>
+                                    <SelectItem value="retail">Retail</SelectItem>
+                                    <SelectItem value="manufacturing">Manufacturing</SelectItem>
+                                    <SelectItem value="healthcare">Healthcare</SelectItem>
+                                    <SelectItem value="education">Education</SelectItem>
+                                    <SelectItem value="other">Other</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <Select value={sortBy} onValueChange={setSortBy}>
+                                <SelectTrigger className="w-full sm:w-40 h-12 bg-white/50 backdrop-blur-sm">
+                                    <SelectValue placeholder="Sort By" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="newest">Newest First</SelectItem>
+                                    <SelectItem value="popular">Most Popular</SelectItem>
+                                    <SelectItem value="price_low">Price: Low to High</SelectItem>
+                                    <SelectItem value="price_high">Price: High to Low</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Dashboard Grid */}
+            <div className="max-w-7xl mx-auto px-4 lg:px-8 py-6 lg:py-12">
+                {filteredDashboards.length === 0 ? (
+                    <div className="text-center py-16">
+                        <div className="w-16 lg:w-24 h-16 lg:h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Search className="w-8 lg:w-12 h-8 lg:h-12 text-slate-400" />
+                        </div>
+                        <h3 className="text-xl font-semibold text-slate-700 mb-2">No dashboards found</h3>
+                        <p className="text-slate-500">Try adjusting your search or filter criteria</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-8">
+                        {filteredDashboards.map((dashboard) => (
+                            <Card key={dashboard.id} className="group hover:shadow-2xl transition-all duration-300 bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:-translate-y-1">
+                                <div className="aspect-video bg-gradient-to-br from-slate-100 to-slate-200 rounded-t-lg overflow-hidden relative">
+                                    {dashboard.is_free && (
+                                        <Badge className="absolute top-3 right-3 bg-green-500 text-white border-0">Free</Badge>
+                                    )}
+                                    {dashboard.preview_image ? (
+                                        <img 
+                                            src={dashboard.preview_image} 
+                                            alt={dashboard.title}
+                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center">
+                                            <BarChart3 className="w-8 lg:w-12 h-8 lg:h-12 text-slate-400" />
+                                        </div>
+                                    )}
+                                </div>
+                                <CardHeader className="pb-3 p-4 lg:p-6">
+                                    <div className="flex items-start justify-between">
+                                        <h3 className="font-bold text-slate-900 text-base lg:text-lg leading-tight pr-2">{dashboard.title}</h3>
+                                        <Badge className={`${categoryColors[dashboard.category] || categoryColors.other} border-0 font-medium text-xs flex-shrink-0`}>
+                                            {dashboard.category.charAt(0).toUpperCase() + dashboard.category.slice(1)}
+                                        </Badge>
+                                    </div>
+                                    <p className="text-slate-600 text-sm line-clamp-2">{dashboard.description}</p>
+                                </CardHeader>
+                                <CardContent className="pt-0 p-4 lg:p-6">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-4 text-xs text-slate-500">
+                                            <span className="flex items-center gap-1">
+                                                <Download className="w-3 h-3" />
+                                                {dashboard.sales_count || 0} downloads
+                                            </span>
+                                        </div>
+                                        <div className="text-right">
+                                            {dashboard.is_free ? (
+                                                <div className="text-xl lg:text-2xl font-bold text-green-600">Free</div>
+                                            ) : (
+                                                <div className="text-xl lg:text-2xl font-bold text-slate-900">${dashboard.price}</div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </CardContent>
+                                <CardFooter className="pt-0 p-4 lg:p-6">
+                                    <Link to={createPageUrl(`DashboardDetail?id=${dashboard.id}`)} className="w-full">
+                                        <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white border-0 h-10 lg:h-12 font-medium rounded-xl shadow-lg">
+                                            View Details
+                                        </Button>
+                                    </Link>
+                                </CardFooter>
+                            </Card>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
