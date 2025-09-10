@@ -1,0 +1,50 @@
+import React from 'react';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { User, ShoppingCart, Download, DollarSign, GraduationCap, LifeBuoy } from 'lucide-react';
+
+export default function UserGuidePage() {
+    const guides = [
+        { icon: User, title: "Managing Your Account", content: "You can view your profile, see your purchase history, and manage your sold dashboards all from the sidebar navigation. To sell dashboards or view your profile, you need to sign in." },
+        { icon: ShoppingCart, title: "Buying a Dashboard", content: "Browse the marketplace, find a dashboard you like, and click 'View Details'. If it's a paid dashboard, click 'Buy Now' to proceed to our secure payment page. If it's free, you can download it instantly after logging in." },
+        { icon: Download, title: "Accessing Your Purchases", content: "All your purchased and downloaded free dashboards are available in the 'My Purchases' section. You can download the .pbix file from there at any time." },
+        { icon: DollarSign, title: "Selling Your Dashboards", content: "To become a seller, simply navigate to the 'Sell Dashboard' page and sign in. You'll be prompted to fill out a form with your dashboard's details, upload the file and a preview image, and set your price (or mark it as free)." },
+        { icon: GraduationCap, title: "Learning with Courses", content: "Explore our 'Courses' page to find video tutorials from experts. Purchase a course to get lifetime access to its videos and learn new Power BI skills." },
+        { icon: LifeBuoy, title: "Getting Support", content: "If you have any questions, our AI Chatbot in the corner can help you find dashboards. For more specific issues, please use the 'Contact Us' page to get in touch with our support team." },
+    ];
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:to-black p-8">
+            <div className="max-w-4xl mx-auto">
+                <div className="text-center mb-12">
+                    <h1 className="text-5xl font-bold text-slate-900 dark:text-white mb-4">User Guide</h1>
+                    <p className="text-xl text-slate-600 dark:text-slate-300">Welcome to Power BI Junction! Here's everything you need to know to get started.</p>
+                </div>
+                <div className="bg-white/80 dark:bg-slate-800/80 shadow-xl rounded-lg p-8 backdrop-blur-sm">
+                    <Accordion type="single" collapsible className="w-full">
+                        {guides.map((guide, index) => {
+                            const Icon = guide.icon;
+                            return (
+                                <AccordionItem value={`item-${index}`} key={index}>
+                                    <AccordionTrigger className="text-lg font-semibold hover:no-underline">
+                                        <div className="flex items-center gap-4">
+                                            <Icon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                                            {guide.title}
+                                        </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="text-base text-slate-600 dark:text-slate-300 pl-14">
+                                        {guide.content}
+                                    </AccordionContent>
+                                </AccordionItem>
+                            );
+                        })}
+                    </Accordion>
+                </div>
+            </div>
+        </div>
+    );
+}
