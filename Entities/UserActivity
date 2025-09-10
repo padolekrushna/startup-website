@@ -1,0 +1,47 @@
+{
+  "name": "UserActivity",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email of the user performing the action"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "page_view",
+        "button_click",
+        "search",
+        "chatbot_interaction",
+        "dashboard_view"
+      ],
+      "description": "The type of event being tracked"
+    },
+    "details": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "A JSON object with details about the event (e.g., page name, button ID, search query)"
+    }
+  },
+  "required": [
+    "user_email",
+    "event_type"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "write": {
+      "user_email": "{{user.email}}"
+    }
+  }
+}
