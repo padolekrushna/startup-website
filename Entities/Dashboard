@@ -1,0 +1,114 @@
+{
+  "name": "Dashboard",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Dashboard title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of the dashboard"
+    },
+    "price": {
+      "type": "number",
+      "description": "Price in USD"
+    },
+    "is_free": {
+      "type": "boolean",
+      "default": false,
+      "description": "Is this dashboard free?"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "sales",
+        "marketing",
+        "finance",
+        "operations",
+        "hr",
+        "executive",
+        "retail",
+        "manufacturing",
+        "healthcare",
+        "education",
+        "other"
+      ],
+      "default": "sales",
+      "description": "Dashboard category"
+    },
+    "preview_image": {
+      "type": "string",
+      "description": "URL to dashboard preview image"
+    },
+    "dashboard_file": {
+      "type": "string",
+      "description": "URL to the Power BI dashboard file"
+    },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Key features of the dashboard"
+    },
+    "data_sources": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Compatible data sources"
+    },
+    "seller_email": {
+      "type": "string",
+      "description": "Email of the dashboard creator"
+    },
+    "sales_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of times sold/downloaded"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "pending",
+        "inactive"
+      ],
+      "default": "pending",
+      "description": "Dashboard listing status"
+    }
+  },
+  "required": [
+    "title",
+    "description",
+    "price",
+    "seller_email"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "seller_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "write": {
+      "$or": [
+        {
+          "seller_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
