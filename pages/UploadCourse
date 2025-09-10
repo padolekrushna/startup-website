@@ -1,0 +1,246 @@
+import React, { useState, useEffect } from 'react';
+import { Course } from '@/entities/Course';
+import { User } from '@/entities/User';
+import { UploadFile } from '@/integrations/Core';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Upload, GraduationCap, Image, Video, ShieldCheck } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
+
+export default function UploadCourse() {
+    const [formData, setFormData] = useState({
+        title: '',
+        description: '',
+        price: '',
+        is_free: false,
+        category: ''
+    });
+    const [previewImage, setPreviewImage] = useState(null);
+    const [uploading, setUploading] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const checkLogin = async () => {
+            try {
+                await User.me();
+                setIsLoggedIn(true);
+            } catch (e) {
+                setIsLoggedIn(false);
+            }
+        };
+        checkLogin();
+    }, []);
+
+    const categories = [
+        { value: 'beginner', label: 'Beginner' },
+        { value: 'intermediate', label: 'Intermediate' },
+        { value: 'advanced', label: 'Advanced' },
+        { value: 'dax', label: 'DAX Functions' },
+        { value: 'data_modeling', label: 'Data Modeling' }
+    ];
+
+    const handleInputChange = (field, value) => {
+        setFormData(prev => ({
+            ...prev,
+            [field]: value
+        }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setUploading(true);
+
+        try {
+            const user = await User.me();
+            let preview_image = '';
+            
+            if (previewImage) {
+                const uploadResult = await UploadFile({ file: previewImage });
+                preview_image = uploadResult.file_url;
+            }
+
+            const courseData = {
+                ...formData,
+                price: formData.is_free ? 0 : parseFloat(formData.price),
+                instructor_email: user.email,
+                preview_image
+            };
+
+            await Course.create(courseData);
+            navigate(createPageUrl('Courses'));
+        } catch (error) {
+            console.error('Error uploading course:', error);
+        }
+        setUploading(false);
+    };
+
+    if (!isLoggedIn) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-8 flex items-center justify-center">
+                <Card className="max-w-md w-full text-center p-6 border-0 shadow-xl bg-white">
+                    <CardHeader>
+                        <ShieldCheck className="w-16 h-16 text-blue-500 mx-auto mb-4" />
+                        <CardTitle className="text-2xl">Become an Instructor</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-slate-600 mb-6">Please login to start creating and selling your courses.</p>
+                        <Button onClick={() => User.loginWithRedirect(window.location.href)} className="w-full bg-gradient-to-r from-blue-600 to-indigo-700">
+                            Login / Sign Up
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-8">
+            <div className="max-w-4xl mx-auto">
+                <div className="mb-8">
+                    <div className="flex items-center gap-3 mb-4">
+                        <GraduationCap className="w-8 h-8 text-blue-600" />
+                        <h1 className="text-3xl font-bold text-slate-900">Create Your Course</h1>
+                    </div>
+                    <p className="text-slate-600">Share your Power BI knowledge and earn money by creating video courses</p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+                        <CardHeader>
+                            <CardTitle>Course Information</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">
+                                    Course Title *
+                                </label>
+                                <Input
+                                    value={formData.title}
+                                    onChange={(e) => handleInputChange('title', e.target.value)}
+                                    placeholder="e.g., Master DAX Functions in Power BI"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">
+                                    Course Description *
+                                </label>
+                                <Textarea
+                                    value={formData.description}
+                                    onChange={(e) => handleInputChange('description', e.target.value)}
+                                    placeholder="Describe what students will learn, prerequisites, and course outcomes..."
+                                    rows={4}
+                                    required
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                                        Price (USD) *
+                                    </label>
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value={formData.price}
+                                        onChange={(e) => handleInputChange('price', e.target.value)}
+                                        placeholder="49.99"
+                                        required
+                                        disabled={formData.is_free}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                                        Category *
+                                    </label>
+                                    <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)} required>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select category" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {categories.map((cat) => (
+                                                <SelectItem key={cat.value} value={cat.value}>
+                                                    {cat.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                            
+                            <div className="flex items-center space-x-2 pt-2">
+                                <input 
+                                    type="checkbox" 
+                                    id="is_free" 
+                                    checked={formData.is_free} 
+                                    onChange={(e) => handleInputChange('is_free', e.target.checked)} 
+                                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                />
+                                <label htmlFor="is_free" className="text-sm font-medium text-slate-700">
+                                    Make this course free
+                                </label>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+                        <CardHeader>
+                            <CardTitle>Course Preview Image</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center">
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => setPreviewImage(e.target.files[0])}
+                                    className="hidden"
+                                    id="preview-upload"
+                                />
+                                <label htmlFor="preview-upload" className="cursor-pointer">
+                                    {previewImage ? (
+                                        <div className="flex items-center justify-center gap-2 text-green-600">
+                                            <Image className="w-5 h-5" />
+                                            <span>{previewImage.name}</span>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            <Image className="w-8 h-8 text-slate-400 mx-auto" />
+                                            <p className="text-slate-600">Click to upload a course preview image</p>
+                                        </div>
+                                    )}
+                                </label>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <div className="flex justify-end">
+                        <Button
+                            type="submit"
+                            disabled={uploading}
+                            className="bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 px-8 py-3 text-lg"
+                        >
+                            {uploading ? (
+                                <>
+                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                                    Creating Course...
+                                </>
+                            ) : (
+                                <>
+                                    <Upload className="w-5 h-5 mr-2" />
+                                    Create Course
+                                </>
+                            )}
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
