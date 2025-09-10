@@ -1,0 +1,18 @@
+import { User } from "@/entities/User";
+import { UserActivity } from "@/entities/UserActivity";
+
+export const trackActivity = async (eventType, details = {}) => {
+    try {
+        const user = await User.me();
+        if (user && user.email) {
+            // Fire and forget, no need to await
+            UserActivity.create({
+                user_email: user.email,
+                event_type: eventType,
+                details: details,
+            });
+        }
+    } catch (error) {
+        // User is not logged in, do nothing
+    }
+};
