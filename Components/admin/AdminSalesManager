@@ -1,0 +1,61 @@
+import React, { useState, useEffect } from 'react';
+import { Purchase } from '@/entities/Purchase';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { format } from 'date-fns';
+
+export default function AdminSalesManager() {
+    const [purchases, setPurchases] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchPurchases();
+    }, []);
+
+    const fetchPurchases = async () => {
+        setLoading(true);
+        const data = await Purchase.filter({ payment_status: "completed" }, "-created_date");
+        setPurchases(data);
+        setLoading(false);
+    };
+
+    const totalRevenue = purchases.reduce((sum, p) => sum + p.amount_paid, 0);
+
+    return (
+        <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+            <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Manage Sales</CardTitle>
+                <div className="text-right">
+                    <p className="text-sm text-slate-500">Total Revenue</p>
+                    <p className="text-2xl font-bold">${totalRevenue.toFixed(2)}</p>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Buyer</TableHead>
+                            <TableHead>Seller</TableHead>
+                            <TableHead>Dashboard ID</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {loading ? (
+                            <TableRow><TableCell colSpan="5" className="text-center">Loading...</TableCell></TableRow>
+                        ) : purchases.map(p => (
+                            <TableRow key={p.id}>
+                                <TableCell>{format(new Date(p.created_date), 'PPP')}</TableCell>
+                                <TableCell>{p.buyer_email}</TableCell>
+                                <TableCell>{p.seller_email}</TableCell>
+                                <TableCell className="font-mono text-xs">{p.dashboard_id}</TableCell>
+                                <TableCell className="text-right font-medium">${p.amount_paid.toFixed(2)}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+    );
+}
