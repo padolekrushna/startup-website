@@ -1,0 +1,124 @@
+
+import React, { useState, useEffect } from 'react';
+import { BlogPost } from '@/entities/BlogPost';
+import { User } from '@/entities/User';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
+import { format } from 'date-fns';
+import { FileText, Plus, Clock, User as UserIcon, WifiOff } from 'lucide-react';
+
+export default function BlogPage() {
+    const [posts, setPosts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [user, setUser] = useState(null);
+    const [error, setError] = useState(null);
+
+    const fetchData = async () => {
+        setLoading(true);
+        setError(null); // Clear previous errors
+        
+        try {
+            const userData = await User.me();
+            setUser(userData);
+        } catch (e) {
+            setUser(null); // User might not be logged in, not necessarily an error to display
+        }
+        
+        try {
+            const blogData = await BlogPost.list("-published_date");
+            setPosts(blogData);
+        } catch (err) {
+            console.error("Error loading blog posts:", err);
+            setError("Could not load blog posts. Please check your connection and try again.");
+        } finally {
+            setLoading(false); // Always set loading to false, regardless of success or failure
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    if (loading) {
+        return <div className="min-h-screen flex items-center justify-center bg-slate-50">Loading blog posts...</div>;
+    }
+
+    if (error) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-8">
+                <WifiOff className="w-24 h-24 text-red-500 mb-6" />
+                <h1 className="text-3xl font-bold mb-2">Connection Error</h1>
+                <p className="text-slate-600 text-lg mb-6 text-center">{error}</p>
+                <Button onClick={fetchData}>Try Again</Button>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-8">
+            <div className="max-w-6xl mx-auto">
+                <div className="text-center mb-12">
+                    <FileText className="w-20 h-20 text-blue-600 mx-auto mb-4" />
+                    <h1 className="text-5xl font-bold text-slate-900 mb-4">Power BI Blog</h1>
+                    <p className="text-xl text-slate-600 mb-8">Insights, tips, and best practices from the Power BI community.</p>
+                    
+                    {user && (
+                        <div className="flex justify-center">
+                            <Link to={createPageUrl('UploadBlog')}>
+                                <Button className="bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 gap-2 px-6 py-3 text-lg shadow-lg">
+                                    <Plus className="w-5 h-5" />
+                                    Write Post
+                                </Button>
+                            </Link>
+                        </div>
+                    )}
+                </div>
+
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {posts.map(post => (
+                        <Link to={createPageUrl(`BlogPostDetail?slug=${post.slug}`)} key={post.id}>
+                            <Card className="border-0 shadow-lg bg-white/80 h-full flex flex-col group hover:shadow-xl transition-shadow hover:-translate-y-1 transform duration-300">
+                                <CardHeader className="p-0">
+                                    {post.preview_image ? (
+                                        <img src={post.preview_image} alt={post.title} className="rounded-t-lg aspect-video object-cover group-hover:opacity-90 transition-opacity" />
+                                    ) : (
+                                        <div className="aspect-video bg-gradient-to-br from-slate-200 to-slate-300 rounded-t-lg flex items-center justify-center">
+                                            <FileText className="w-12 h-12 text-slate-400" />
+                                        </div>
+                                    )}
+                                </CardHeader>
+                                <CardContent className="p-6 flex-grow flex flex-col">
+                                    <div className="flex-grow">
+                                        <h3 className="text-xl font-bold mb-3 text-slate-900 group-hover:text-blue-700 transition-colors line-clamp-2">{post.title}</h3>
+                                        <div className="flex items-center gap-4 text-sm text-slate-500 mb-4">
+                                            <span className="flex items-center gap-1">
+                                                <UserIcon className="w-4 h-4" />
+                                                {post.author_name}
+                                            </span>
+                                            <span className="flex items-center gap-1">
+                                                <Clock className="w-4 h-4" />
+                                                {format(new Date(post.published_date), 'MMM d, yyyy')}
+                                            </span>
+                                        </div>
+                                        {post.tags && post.tags.length > 0 && (
+                                            <div className="flex flex-wrap gap-1 mb-3">
+                                                {post.tags.slice(0, 3).map((tag, index) => (
+                                                    <Badge key={index} variant="secondary" className="text-xs">
+                                                        {tag}
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </Link>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
