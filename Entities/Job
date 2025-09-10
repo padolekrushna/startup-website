@@ -1,0 +1,59 @@
+{
+  "name": "Job",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Job title"
+    },
+    "department": {
+      "type": "string",
+      "description": "Department for the role"
+    },
+    "location": {
+      "type": "string",
+      "description": "Job location (e.g., Remote, City, Country)"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "Full-time",
+        "Part-time",
+        "Contract",
+        "Internship"
+      ],
+      "description": "Type of employment"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed job description"
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of job requirements"
+    },
+    "is_open": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether the position is still open"
+    }
+  },
+  "required": [
+    "title",
+    "department",
+    "location",
+    "type",
+    "description"
+  ],
+  "rls": {
+    "read": {},
+    "write": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
