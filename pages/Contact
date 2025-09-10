@@ -1,0 +1,88 @@
+import React, { useState } from 'react';
+import { ContactMessage } from '@/entities/ContactMessage';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Phone, Mail, MapPin } from 'lucide-react';
+
+export default function ContactPage() {
+    const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
+    const [submitting, setSubmitting] = useState(false);
+    const [submitted, setSubmitted] = useState(false);
+
+    const handleInputChange = (e) => {
+        const { id, value } = e.target;
+        setFormData(prev => ({ ...prev, [id]: value }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSubmitting(true);
+        try {
+            await ContactMessage.create(formData);
+            setSubmitted(true);
+        } catch (error) {
+            console.error("Failed to send message", error);
+        }
+        setSubmitting(false);
+    };
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-8">
+            <div className="max-w-6xl mx-auto">
+                <div className="text-center mb-12">
+                    <h1 className="text-5xl font-bold text-slate-900 mb-4">Get In Touch</h1>
+                    <p className="text-xl text-slate-600">We'd love to hear from you. Whether you have a question about our dashboards, services, or anything else, our team is ready to answer all your questions.</p>
+                </div>
+                
+                <div className="grid md:grid-cols-2 gap-12">
+                    <div className="space-y-8">
+                        <div className="flex items-start gap-4">
+                            <div className="bg-blue-100 p-3 rounded-full"><MapPin className="w-6 h-6 text-blue-600"/></div>
+                            <div>
+                                <h3 className="text-xl font-bold">Our Office</h3>
+                                <p className="text-slate-600">Viman Nagar, Pune, Maharashtra, India</p>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-4">
+                            <div className="bg-green-100 p-3 rounded-full"><Mail className="w-6 h-6 text-green-600"/></div>
+                            <div>
+                                <h3 className="text-xl font-bold">Email Us</h3>
+                                <a href="mailto:krushnapadole18@gmail.com" className="text-slate-600 hover:underline">krushnapadole18@gmail.com</a>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-4">
+                            <div className="bg-purple-100 p-3 rounded-full"><Phone className="w-6 h-6 text-purple-600"/></div>
+                            <div>
+                                <h3 className="text-xl font-bold">Call Us</h3>
+                                <a href="tel:+919960161764" className="text-slate-600 hover:underline">9960161764</a>
+                            </div>
+                        </div>
+                    </div>
+                    <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+                        <CardHeader><CardTitle>Send us a message</CardTitle></CardHeader>
+                        <CardContent>
+                            {submitted ? (
+                                <div className="text-center p-8">
+                                    <h3 className="text-2xl font-bold text-green-600 mb-2">Thank you!</h3>
+                                    <p>Your message has been sent. We'll get back to you shortly.</p>
+                                </div>
+                            ) : (
+                                <form onSubmit={handleSubmit} className="space-y-4">
+                                    <Input id="name" placeholder="Your Name" value={formData.name} onChange={handleInputChange} required />
+                                    <Input id="email" type="email" placeholder="Your Email" value={formData.email} onChange={handleInputChange} required />
+                                    <Input id="subject" placeholder="Subject" value={formData.subject} onChange={handleInputChange} required />
+                                    <Textarea id="message" placeholder="Your Message" rows={5} value={formData.message} onChange={handleInputChange} required />
+                                    <Button type="submit" disabled={submitting} className="w-full bg-gradient-to-r from-blue-600 to-indigo-700">
+                                        {submitting ? 'Sending...' : 'Send Message'}
+                                    </Button>
+                                </form>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+        </div>
+    );
+}
