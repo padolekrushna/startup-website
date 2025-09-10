@@ -1,0 +1,312 @@
+
+import React, { useState, useEffect, useCallback } from "react";
+import { Dashboard } from "@/entities/Dashboard";
+import { Purchase } from "@/entities/Purchase";
+import { User } from "@/entities/User";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Download, Star, Check, BarChart3, CreditCard } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+import { trackActivity } from "@/components/tracking";
+
+export default function DashboardDetail() {
+    const [dashboard, setDashboard] = useState(null);
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [purchasing, setPurchasing] = useState(false); // This state is now used for free downloads
+    const [purchased, setPurchased] = useState(false);
+    const navigate = useNavigate();
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const dashboardId = urlParams.get('id');
+
+    const loadDashboard = useCallback(async () => {
+        try {
+            const data = await Dashboard.list();
+            const foundDashboard = data.find(d => d.id === dashboardId);
+            setDashboard(foundDashboard);
+        } catch (error) {
+            console.error("Error loading dashboard:", error);
+        }
+        setLoading(false);
+    }, [dashboardId]);
+
+    const loadUserAndPurchaseStatus = useCallback(async () => {
+        try {
+            const userData = await User.me();
+            setUser(userData);
+            
+            // Check if user already purchased this dashboard
+            const purchases = await Purchase.filter({ 
+                dashboard_id: dashboardId, 
+                buyer_email: userData.email, 
+                payment_status: "completed" 
+            });
+            if (purchases.length > 0) {
+                setPurchased(true);
+            }
+        } catch (error) {
+            // User not logged in, that's fine for viewing
+            setUser(null);
+        }
+    }, [dashboardId]);
+
+    useEffect(() => {
+        if (dashboardId) {
+            loadDashboard();
+            loadUserAndPurchaseStatus();
+            trackActivity('dashboard_view', { dashboardId });
+        }
+    }, [dashboardId, loadDashboard, loadUserAndPurchaseStatus]);
+
+    const handlePurchase = async () => {
+        if (!dashboard) return;
+        if (!user) {
+            User.loginWithRedirect(window.location.href);
+            return;
+        }
+        navigate(createPageUrl(`Payment?dashboardId=${dashboard.id}`));
+    };
+
+    const handleFreeDownload = async () => {
+        if (!dashboard || !dashboard.dashboard_file) return; // Ensure dashboard and file exist
+        if (!user) {
+            User.loginWithRedirect(window.location.href);
+            return;
+        }
+
+        setPurchasing(true);
+        try {
+            // Logic to download file
+            const link = document.createElement('a');
+            link.href = dashboard.dashboard_file;
+            link.download = `${dashboard.title}.pbix`; // Assuming .pbix is the standard extension
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Update sales count for free dashboards too
+            await Dashboard.update(dashboard.id, {
+                sales_count: (dashboard.sales_count || 0) + 1
+            });
+            setPurchased(true); // Treat as "purchased" after download for UI update
+        } catch (error) {
+            console.error("Error downloading file:", error);
+            // Optionally, show a user-friendly error message
+        }
+        setPurchasing(false);
+    }
+
+    const categoryColors = {
+        sales: "bg-blue-100 text-blue-800",
+        marketing: "bg-purple-100 text-purple-800",
+        finance: "bg-green-100 text-green-800",
+        operations: "bg-orange-100 text-orange-800",
+        hr: "bg-pink-100 text-pink-800",
+        executive: "bg-indigo-100 text-indigo-800",
+        retail: "bg-yellow-100 text-yellow-800",
+        manufacturing: "bg-red-100 text-red-800",
+        healthcare: "bg-teal-100 text-teal-800",
+        education: "bg-cyan-100 text-cyan-800",
+        other: "bg-gray-100 text-gray-800"
+    };
+
+    if (loading) {
+        return (
+            <div className="p-8 bg-slate-50 min-h-full">
+                <div className="max-w-4xl mx-auto">
+                    <div className="animate-pulse space-y-6">
+                        <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+                        <div className="aspect-video bg-gray-200 rounded-lg"></div>
+                        <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+                        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (!dashboard) {
+        return (
+            <div className="p-8 flex items-center justify-center bg-slate-50 min-h-full">
+                <div className="text-center">
+                    <h2 className="text-2xl font-bold text-slate-900 mb-4">Dashboard not found</h2>
+                    <Link to={createPageUrl("Marketplace")}>
+                        <Button variant="outline">Back to Marketplace</Button>
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="bg-slate-50 min-h-full">
+            <div className="max-w-6xl mx-auto p-8">
+                {/* Navigation */}
+                <div className="mb-8">
+                    <Link to={createPageUrl("Marketplace")}>
+                        <Button variant="outline" className="gap-2 hover:bg-white/80">
+                            <ArrowLeft className="w-4 h-4" />
+                            Back to Marketplace
+                        </Button>
+                    </Link>
+                </div>
+
+                <div className="grid lg:grid-cols-3 gap-8">
+                    {/* Main Content */}
+                    <div className="lg:col-span-2 space-y-6">
+                        {/* Preview Image */}
+                        <Card className="overflow-hidden border-0 shadow-xl">
+                            <div className="aspect-video bg-gradient-to-br from-slate-100 to-slate-200">
+                                {dashboard.preview_image ? (
+                                    <img 
+                                        src={dashboard.preview_image} 
+                                        alt={dashboard.title}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                        <BarChart3 className="w-24 h-24 text-slate-400" />
+                                    </div>
+                                )}
+                            </div>
+                        </Card>
+
+                        {/* Details */}
+                        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+                            <CardHeader>
+                                <div className="flex items-start justify-between">
+                                    <div>
+                                        <CardTitle className="text-3xl font-bold text-slate-900 mb-2">
+                                            {dashboard.title}
+                                        </CardTitle>
+                                        <Badge className={`${categoryColors[dashboard.category]} border-0 font-medium mb-4`}>
+                                            {dashboard.category}
+                                        </Badge>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-sm text-slate-500">Price</div>
+                                        <div className="text-3xl font-bold text-slate-900">${dashboard.price}</div>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-slate-600 text-lg leading-relaxed mb-6">
+                                    {dashboard.description}
+                                </p>
+
+                                {dashboard.features && dashboard.features.length > 0 && (
+                                    <div className="mb-6">
+                                        <h3 className="text-xl font-semibold text-slate-900 mb-3">Key Features</h3>
+                                        <ul className="space-y-2">
+                                            {dashboard.features.map((feature, index) => (
+                                                <li key={index} className="flex items-start gap-3">
+                                                    <Check className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                                                    <span className="text-slate-600">{feature}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+
+                                {dashboard.data_sources && dashboard.data_sources.length > 0 && (
+                                    <div>
+                                        <h3 className="text-xl font-semibold text-slate-900 mb-3">Compatible Data Sources</h3>
+                                        <div className="flex flex-wrap gap-2">
+                                            {dashboard.data_sources.map((source, index) => (
+                                                <Badge key={index} variant="outline" className="bg-slate-50">
+                                                    {source}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Sidebar */}
+                    <div className="space-y-6">
+                        {/* Purchase Card */}
+                        <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm sticky top-24">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <CreditCard className="w-5 h-5" />
+                                    Get this Dashboard
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                                    <span className="font-medium">Price</span>
+                                    {dashboard.is_free ? (
+                                        <span className="text-2xl font-bold text-green-600">Free</span>
+                                    ) : (
+                                        <span className="text-2xl font-bold text-slate-900">${dashboard.price}</span>
+                                    )}
+                                </div>
+                                
+                                {purchased ? (
+                                    <Button asChild className="w-full bg-green-600 hover:bg-green-700 h-12 text-lg">
+                                        <Link to={createPageUrl("MyPurchases")}>
+                                            <Check className="w-5 h-5 mr-2" />
+                                            View in My Purchases
+                                        </Link>
+                                    </Button>
+                                ) : dashboard.is_free ? (
+                                    <Button 
+                                        className="w-full bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 h-12 text-lg"
+                                        onClick={handleFreeDownload}
+                                        disabled={purchasing}
+                                    >
+                                        <Download className="w-5 h-5 mr-2" />
+                                        {purchasing ? "Downloading..." : "Download Now"}
+                                    </Button>
+                                ) : (
+                                    <Button 
+                                        className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 h-12 text-lg"
+                                        onClick={handlePurchase}
+                                    >
+                                        <CreditCard className="w-5 h-5 mr-2" />
+                                        Buy Now
+                                    </Button>
+                                )}
+
+                                <div className="text-center text-sm text-slate-500">
+                                    <p className="flex items-center justify-center gap-1">
+                                        <Download className="w-4 h-4" />
+                                        {dashboard.sales_count || 0} downloads
+                                    </p>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Stats Card */}
+                        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+                            <CardHeader>
+                                <CardTitle>Dashboard Stats</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-slate-600">Sales</span>
+                                    <span className="font-semibold">{dashboard.sales_count || 0}</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-slate-600">Category</span>
+                                    <span className="font-semibold capitalize">{dashboard.category}</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-slate-600">Created</span>
+                                    <span className="font-semibold">
+                                        {new Date(dashboard.created_date).toLocaleDateString()}
+                                    </span>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
