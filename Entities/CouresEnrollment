@@ -1,0 +1,76 @@
+{
+  "name": "CourseEnrollment",
+  "type": "object",
+  "properties": {
+    "course_id": {
+      "type": "string",
+      "description": "ID of the enrolled course"
+    },
+    "student_email": {
+      "type": "string",
+      "description": "Email of the enrolled student"
+    },
+    "instructor_email": {
+      "type": "string",
+      "description": "Email of the instructor"
+    },
+    "amount_paid": {
+      "type": "number",
+      "description": "Amount paid for enrollment"
+    },
+    "enrollment_status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "completed",
+        "cancelled"
+      ],
+      "default": "active"
+    },
+    "progress_percentage": {
+      "type": "number",
+      "default": 0,
+      "description": "Course completion percentage"
+    },
+    "last_accessed": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last time course was accessed"
+    }
+  },
+  "required": [
+    "course_id",
+    "student_email",
+    "instructor_email",
+    "amount_paid"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "student_email": "{{user.email}}"
+        },
+        {
+          "instructor_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "write": {
+      "$or": [
+        {
+          "student_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
