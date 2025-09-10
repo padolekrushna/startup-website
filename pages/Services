@@ -1,0 +1,77 @@
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Check, Mail, Bot } from 'lucide-react';
+
+export default function ServicesPage() {
+    const services = [
+        "Custom Dashboard Development",
+        "Data Model Design & Optimization",
+        "ETL and Data Integration",
+        "Performance Tuning",
+        "Advanced DAX Calculations",
+        "Corporate Training"
+    ];
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+            <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-700 opacity-90"></div>
+                <div className="relative max-w-7xl mx-auto px-8 py-24 text-center text-white">
+                    <h1 className="text-5xl md:text-6xl font-bold mb-4">Custom Solutions & Services</h1>
+                    <p className="text-xl text-blue-100 max-w-3xl mx-auto">
+                        Leverage our expertise to build tailored data solutions that drive your business forward.
+                    </p>
+                </div>
+            </div>
+            
+            <div className="max-w-5xl mx-auto p-8 -mt-16 space-y-8">
+                <Card className="border-0 shadow-2xl bg-white/90 backdrop-blur-sm">
+                    <CardHeader>
+                        <CardTitle className="text-3xl font-bold text-center">Power BI Development</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid md:grid-cols-2 gap-8">
+                        <div className="space-y-4">
+                            <h3 className="text-xl font-semibold">Our Expertise Includes:</h3>
+                            <ul className="space-y-3">
+                                {services.map(service => (
+                                    <li key={service} className="flex items-center gap-3">
+                                        <Check className="w-5 h-5 text-green-500" />
+                                        <span>{service}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        <div className="bg-slate-50 p-6 rounded-lg">
+                            <h3 className="text-xl font-semibold mb-3">Get a Free Consultation</h3>
+                            <p className="text-slate-600 mb-6">
+                                Let's discuss your project. Contact us today for a no-obligation quote and find out how we can help you turn your data into a strategic asset.
+                            </p>
+                            <Button className="w-full h-12 text-lg gap-2 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800">
+                                <Mail className="w-5 h-5" />
+                                Contact Us
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-0 shadow-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
+                    <CardHeader>
+                        <CardTitle className="text-3xl font-bold text-center flex items-center justify-center gap-3">
+                            <Bot className="w-8 h-8"/>
+                            New! Agentic AI Automation
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-center max-w-2xl mx-auto">
+                        <p className="text-lg text-indigo-100 mb-6">
+                            Supercharge your organization with custom AI agents. We build and deploy autonomous agents to automate complex workflows, streamline operations, and unlock unprecedented efficiency.
+                        </p>
+                        <Button variant="secondary" size="lg" className="h-12 text-lg gap-2 bg-white text-indigo-700 hover:bg-slate-100">
+                            Explore AI Solutions
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+    );
+}
