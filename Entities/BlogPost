@@ -1,0 +1,53 @@
+{
+  "name": "BlogPost",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Title of the blog post"
+    },
+    "slug": {
+      "type": "string",
+      "description": "URL-friendly slug for the post"
+    },
+    "content": {
+      "type": "string",
+      "description": "The full content of the blog post in Markdown format"
+    },
+    "author_name": {
+      "type": "string",
+      "description": "Name of the author"
+    },
+    "published_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the post was published"
+    },
+    "preview_image": {
+      "type": "string",
+      "description": "URL for a preview image"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of tags for categorization"
+    }
+  },
+  "required": [
+    "title",
+    "slug",
+    "content",
+    "author_name",
+    "published_date"
+  ],
+  "rls": {
+    "read": {},
+    "write": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
