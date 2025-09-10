@@ -1,0 +1,108 @@
+
+import React, { useState, useEffect } from 'react';
+import { User } from '@/entities/User';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { ShieldOff } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import AdminDashboardManager from '@/components/admin/AdminDashboardManager';
+import AdminUserManager from '@/components/admin/AdminUserManager';
+import AdminBlogManager from '@/components/admin/AdminBlogManager';
+import AdminCourseManager from '@/components/admin/AdminCourseManager';
+import AdminSalesManager from '@/components/admin/AdminSalesManager';
+import AdminMessageManager from '@/components/admin/AdminMessageManager';
+import AdminApplicationManager from '@/components/admin/AdminApplicationManager';
+
+
+const ADMIN_EMAIL = "krushnapadole18@gmail.com";
+
+function AdminAccessDenied() {
+    return (
+        <div className="flex flex-col items-center justify-center h-full text-center p-8">
+            <ShieldOff className="w-24 h-24 text-red-500 mb-6" />
+            <h1 className="text-4xl font-bold mb-2">Access Denied</h1>
+            <p className="text-slate-600 text-lg">You do not have permission to view this page.</p>
+        </div>
+    );
+}
+
+export default function AdminPage() {
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const checkAdminStatus = async () => {
+            try {
+                const currentUser = await User.me();
+                if (currentUser && currentUser.email === ADMIN_EMAIL) {
+                    setIsAdmin(true);
+                }
+            } catch (error) {
+                // Not logged in or error fetching user
+                setIsAdmin(false);
+            }
+            setLoading(false);
+        };
+        checkAdminStatus();
+    }, []);
+
+    if (loading) {
+        return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    }
+
+    if (!isAdmin) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+                <Card className="max-w-lg w-full shadow-2xl">
+                    <CardContent className="p-0">
+                        <AdminAccessDenied />
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 p-8">
+            <div className="max-w-7xl mx-auto">
+                <div className="mb-8">
+                    <h1 className="text-4xl font-bold text-slate-900">Admin Control Panel</h1>
+                    <p className="text-slate-600">Manage all aspects of Power BI Junction from here.</p>
+                </div>
+                
+                <Tabs defaultValue="dashboards" className="w-full">
+                    <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 md:grid-cols-7 mb-6">
+                        <TabsTrigger value="dashboards">Dashboards</TabsTrigger>
+                        <TabsTrigger value="sales">Sales</TabsTrigger>
+                        <TabsTrigger value="users">Users</TabsTrigger>
+                        <TabsTrigger value="courses">Courses</TabsTrigger>
+                        <TabsTrigger value="blog">Blog</TabsTrigger>
+                        <TabsTrigger value="applications">Applications</TabsTrigger>
+                        <TabsTrigger value="messages">Messages</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="dashboards">
+                        <AdminDashboardManager />
+                    </TabsContent>
+                     <TabsContent value="sales">
+                        <AdminSalesManager />
+                    </TabsContent>
+                    <TabsContent value="users">
+                        <AdminUserManager />
+                    </TabsContent>
+                    <TabsContent value="blog">
+                        <AdminBlogManager />
+                    </TabsContent>
+                    <TabsContent value="courses">
+                        <AdminCourseManager />
+                    </TabsContent>
+                    <TabsContent value="applications">
+                        <AdminApplicationManager />
+                    </TabsContent>
+                    <TabsContent value="messages">
+                        <AdminMessageManager />
+                    </TabsContent>
+                </Tabs>
+            </div>
+        </div>
+    );
+}
